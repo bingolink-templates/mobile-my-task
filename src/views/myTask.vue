@@ -3,14 +3,14 @@
     <!-- 我的任务 -->
     <div class="my-task">
       <div class="my-task-title flex">
-        <text class="f28 fw5 c0">我的任务</text>
-        <text class="f24 c153 fw4 pl20 pt10 pb10" @click="mytaskMoreEvent">全部</text>
+        <text class="f28 fw5 c0">{{i18n.MyMission}}</text>
+        <text class="f24 c153 fw4 pl20 pt10 pb10" @click="mytaskMoreEvent">{{i18n.All}}</text>
       </div>
       <div class="my-task-content" v-if="isShow">
-        <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
+        <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index'
+          @click='mytaskUserEvent(item.id)'>
           <div class="flex-dr task-item flex-ac">
             <div v-if='item.marked == false' class="task-line task-level-one"></div>
-            <!-- <div v-if='item.marked == true' class="task-line task-level-two"></div> -->
             <div v-if='item.marked == true' class="task-line task-level-three"></div>
             <div :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
               <div class="task-text flex">
@@ -26,7 +26,7 @@
         <div class="no-content flex-ac flex-jc" v-if='mytaskArr.length==0'>
           <div class="flex-dr flex-jc">
             <bui-image src="/image/sleep.png" width="42px" height="39px"></bui-image>
-            <text class="f26 c51 fw4 pl15 center-height">{{isError?'暂无任务':'加载失败'}}</text>
+            <text class="f26 c51 fw4 pl15 center-height">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
           </div>
         </div>
       </div>
@@ -37,6 +37,7 @@
 <script>
   const link = weex.requireModule("LinkModule");
   const dom = weex.requireModule('dom');
+  const linkapi = require('linkapi');
   export default {
     data() {
       return {
@@ -51,18 +52,20 @@
           '6': '周六',
         },
         isShow: false,
-        isError: true
+        isError: true,
+        channel: new BroadcastChannel('WidgetsMessage'),
+        i18n: ''
       }
     },
     methods: {
       mytaskMoreEvent() {
         link.launchLinkService(['[OpenApp] \n appCode=crm \n appUrl=LinkOl/Modular/other/taskList.html'], (res) => {},
-        (err) => {});
+          (err) => {});
       },
       mytaskUserEvent(id) {
-        link.launchLinkService(['[OpenApp] \n appCode=crm \n appUrl=LinkOl/Modular/other/taskHome.html \n id='+ id], (res) => {},
-        (err) => {
-        });
+        link.launchLinkService(['[OpenApp] \n appCode=crm \n appUrl=LinkOl/Modular/other/taskHome.html \n id=' + id], (
+            res) => {},
+          (err) => {});
       },
       getNowFormatDate(type, dat) {
         let date = new Date()
@@ -89,101 +92,88 @@
         }
         return currentdate;
       },
-      getToken(success, error) {
-        return new Promise((resolve, reject) => {
-          link.getToken([], res => {
-            resolve(res);
-            success && success(res);
-          }, err => {
-            reject(err);
-            error && error(err);
-          });
-        });
-      },
-      getTaskData(url, data, token, success, error) {
-        return new Promise((resolve, reject) => {
-          this.$get({
-            url: url,
-            headers: {
-              'Authorization': 'Bearer ' + token
-            },
-            data: data
-          }).then((res) => {
-            resolve(res);
-            success && success(res);
-          }).catch((reason) => {
-            reject(reason);
-            error && error(reason);
-          })
-        });
-      },
       getTask(startTime, endTime) {
-        this.getToken((token) => {
-          link.getServerConfigs([], (params) => {
-            let whereFilter = '(UNIX_TIMESTAMP(startTime) <= ' + endTime +
-              ' OR startTime IS NULL) AND (UNIX_TIMESTAMP(endTime)>= ' + startTime + ' OR endTime IS NULL)'
-            let objData = {
-              whereFilter,
-              entityName: 'ExtendWorktask',
-              searchType: 0,
-              keyWord: '',
-              currentStatus: 0,
-              orderBy: 'IF(ISNULL(IFNULL(startTime,endTime)),1,0),IF(ISNULL(startTime),endTime,startTime),IF(ISNULL(endTime),1,0),endTime',
-              marked: false,
-              parentId: '',
-              endTime: '',
-              startTime: '',
-            }
+        link.getServerConfigs([], (params) => {
+          let whereFilter = '(UNIX_TIMESTAMP(startTime) <= ' + endTime +
+            ' OR startTime IS NULL) AND (UNIX_TIMESTAMP(endTime)>= ' + startTime + ' OR endTime IS NULL)'
+          let objData = {
+            whereFilter,
+            entityName: 'ExtendWorktask',
+            searchType: 0,
+            keyWord: '',
+            currentStatus: 0,
+            orderBy: 'IF(ISNULL(IFNULL(startTime,endTime)),1,0),IF(ISNULL(startTime),endTime,startTime),IF(ISNULL(endTime),1,0),endTime',
+            marked: false,
+            parentId: '',
+            endTime: '',
+            startTime: '',
+          }
 
-            let reqObjData = JSON.parse(JSON.stringify(objData))
-            reqObjData['whereFilter'] = '(UNIX_TIMESTAMP(startTime) <= ' + endTime + ' OR startTime IS NULL)'
-            reqObjData['marked'] = true
-            // 内部数据
-            let promiseOne = this.getTaskData(params.uamUri + '/webCommon/getList', objData, token.accessToken, (res) =>
-            {}, (err) => {})
-            // 星标数据
-            let promiseTwo = this.getTaskData(params.uamUri + '/webCommon/getList', reqObjData, token.accessToken,
-              (res) => {}, (err) => {})
-            Promise.all([
-              promiseOne, promiseTwo
-            ]).then(() => {
-              this.isError = true
-              this.isShow = true
-              this.broadcastWidgetHeight()
-              let task = []
-              if (promiseOne._v.success == true && promiseTwo._v.success == true) {
-                if (JSON.stringify(promiseOne._v.data) != '[]') {
-                  task = promiseOne._v.data
-                }
-                if (JSON.stringify(promiseTwo._v.data) != '[]') {
-                  task = task.concat(promiseTwo._v.data)
-                }
+          let reqObjData = JSON.parse(JSON.stringify(objData))
+          reqObjData['whereFilter'] = '(UNIX_TIMESTAMP(startTime) <= ' + endTime + ' OR startTime IS NULL)'
+          reqObjData['marked'] = true
 
-                let taskObj = {}
-                let taskItem = []
-                for (let index = 0; index < task.length; index++) {
-                  let newDate = new Date(Date.parse(task[index].createdTimeDisplayValue.replace(/\-/g,
-                    "/")));
-                  let getMonthWeek = this.getNowFormatDate(1, newDate)
-                  let getDay = newDate.getDay()
-                  taskObj['time'] = getMonthWeek
-                  taskObj['week'] = this.week[getDay]
-                  taskObj['name'] = task[index].name
-                  taskObj['id'] = task[index].id
-                  taskObj['marked'] = task[index].marked
-                  taskItem.push(JSON.parse(JSON.stringify(taskObj)))
-                }
-                this.mytaskArr = taskItem
+          let index = 0;
+          let promiseOne;
+          let promiseTwo;
+
+          // 内部数据
+          linkapi.get({
+            url: params.specialUri + '/webCommon/getList',
+            data: objData
+          }).then((res) => {
+            if (res.success == true) {
+              index++
+              promiseOne = res
+              if (index == 2) {
+                this.getTaskData(promiseOne, promiseTwo)
               }
-            }).catch(() => {
-              this.error()
-            })
-          }, () => {
-            this.error()
-          });
-        }, (err) => {
+            }
+          })
+          // 星标数据
+          linkapi.get({
+            url: params.specialUri + '/webCommon/getList',
+            data: reqObjData
+          }).then((res) => {
+            if (res.success == true) {
+              index++
+              promiseTwo = res
+              if (index == 2) {
+                this.getTaskData(promiseOne, promiseTwo)
+              }
+            }
+          })
+        }, () => {
           this.error()
-        })
+        });
+      },
+      getTaskData(promiseOne, promiseTwo) {
+        this.isError = true
+        this.isShow = true
+        this.broadcastWidgetHeight()
+        let task = []
+        if (JSON.stringify(promiseOne.data) != '[]') {
+          task = promiseOne.data
+        }
+        if (JSON.stringify(promiseTwo.data) != '[]') {
+          task = task.concat(promiseTwo.data)
+        }
+
+        let taskObj = {}
+        let taskItem = []
+        for (let index = 0; index < task.length; index++) {
+          let newDate = new Date(Date.parse(task[index].createdTimeDisplayValue.replace(/\-/g,
+            "/")));
+          let getMonthWeek = this.getNowFormatDate(1, newDate)
+          let getDay = newDate.getDay()
+          taskObj['time'] = getMonthWeek
+          taskObj['week'] = this.week[getDay]
+          taskObj['name'] = task[index].name
+          taskObj['id'] = task[index].id
+          taskObj['marked'] = task[index].marked
+          taskItem.push(JSON.parse(JSON.stringify(taskObj)))
+        }
+        this.mytaskArr = taskItem
       },
       error() {
         this.isShow = true
@@ -194,23 +184,35 @@
         let _params = this.$getPageParams();
         setTimeout(() => {
           dom.getComponentRect(this.$refs.wrap, (ret) => {
-            var channel = new BroadcastChannel('WidgetsMessage')
-            channel.postMessage({
+            this.channel.postMessage({
               widgetHeight: ret.size.height,
               id: _params.id
             });
             channel.close();
           });
         }, 100)
+      },
+      getData() {
+        let searchTime = this.getNowFormatDate(2, null);
+        let start = searchTime + ' 00:00:00'
+        let startDate = new Date(start)
+        let end = searchTime + ' 23:59:59'
+        let endDate = new Date(end)
+        this.getTask(startDate.getTime(), endDate.getTime())
       }
     },
+    created() {
+      linkapi.getLanguage((res) => {
+        this.i18n = this.$window[res]
+      })
+    },
     mounted() {
-      let searchTime = this.getNowFormatDate(2, null);
-      let start = searchTime + ' 00:00:00'
-      let startDate = new Date(start)
-      let end = searchTime + ' 23:59:59'
-      let endDate = new Date(end)
-      this.getTask(startDate.getTime(), endDate.getTime())
+      this.channel.onmessage = (event) => {
+        if (event.data.action === 'RefreshData') {
+          this.getData()
+        }
+      }
+      this.getData()
     }
   }
 </script>
