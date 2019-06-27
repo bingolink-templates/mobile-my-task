@@ -9,8 +9,8 @@
             <div class="my-task-content" v-if="isShow">
                 <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
                     <div class="flex-dr task-item flex-ac">
-                        <div v-if='item.marked == false' class="task-line task-level-one"></div>
-                        <div v-if='item.marked == true' class="task-line task-level-three"></div>
+                        <div v-if='item.marked == true' class="task-line task-level-one"></div>
+                        <div v-if='item.marked == false' class="task-line task-level-three"></div>
                         <div :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
                             <div class="task-text flex">
                                 <text class="f28 c0 fw4 prl27 lines1 task-width">{{item.name}}</text>
