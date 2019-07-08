@@ -218,7 +218,7 @@
 <style lang="css" src="../css/common.css"></style>
 <style>
     .main {
-        background-color: #666;
+		flex: 1;
     }
     .my-task {
         background-color: #fff;
