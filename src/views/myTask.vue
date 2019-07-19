@@ -1,5 +1,5 @@
 <template>
-    <div ref="wrap" class='main'>
+    <div ref="wrap">
         <!-- 我的任务 -->
         <div class="my-task">
             <div class="my-task-title flex">
@@ -7,22 +7,25 @@
                 <text class="f24 c153 fw4 pl20 pt10 pb10" @click="mytaskMoreEvent">{{i18n.All}}</text>
             </div>
             <div class="my-task-content" v-if="isShow">
-                <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
+                <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index'
+                    @click='mytaskUserEvent(item.id)'>
                     <div class="flex-dr task-item flex-ac">
                         <div v-if='item.marked == true' class="task-line task-level-one"></div>
                         <div v-if='item.marked == false' class="task-line task-level-three"></div>
-                        <div :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
-                            <div class="task-text flex">
-                                <text class="f28 c0 fw4 prl27 lines1 task-width">{{item.name}}</text>
-                                <div class="task-time-width flex">
+                        <div class="flex1"
+                            :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
+                            <div class="flex-dr flex-ac flex-sb ptb27">
+                                <text class="f28 c0 fw4 lines1 flex1">{{item.name}}</text>
+                                <text class="f24 c153 fw4 pl20">{{item.showtime}}</text>
+                                <!-- <div class="task-time-width flex flex-dr">
                                     <text class="f24 c153 fw4">{{item.time}}</text>
                                     <text class="f24 c153 fw4">{{item.week}}</text>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="no-content flex-ac flex-jc" v-if='mytaskArr.length==0'>
+                <div class="no-content flex1  flex-ac flex-jc" v-if='mytaskArr.length==0'>
                     <div class="flex-dr flex-jc">
                         <bui-image src="/image/sleep.png" width="42px" height="39px"></bui-image>
                         <text class="f26 c51 fw4 pl15 center-height">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
@@ -128,6 +131,8 @@
                                 this.getTaskData(promiseOne, promiseTwo)
                             }
                         }
+                    }, () => {
+                        this.error()
                     })
                     // 星标数据
                     linkapi.get({
@@ -141,6 +146,8 @@
                                 this.getTaskData(promiseOne, promiseTwo)
                             }
                         }
+                    }, () => {
+                        this.error()
                     })
                 }, () => {
                     this.error()
@@ -157,22 +164,72 @@
                 if (JSON.stringify(promiseTwo.data) != '[]') {
                     task = task.concat(promiseTwo.data)
                 }
-
                 let taskObj = {}
                 let taskItem = []
                 for (let index = 0; index < task.length; index++) {
                     let newDate = new Date(Date.parse(task[index].createdTimeDisplayValue.replace(/\-/g,
                         "/")));
-                    let getMonthWeek = this.getNowFormatDate(1, newDate)
+                    // let getMonthWeek = this.getNowFormatDate(1, newDate)
                     let getDay = newDate.getDay()
-                    taskObj['time'] = getMonthWeek
-                    taskObj['week'] = this.week[getDay]
+                    // taskObj['time'] = getMonthWeek
+                    // taskObj['week'] = this.week[getDay]
+                    taskObj['showtime'] = this.formatStartEndTime(task[index])
                     taskObj['name'] = task[index].name
                     taskObj['id'] = task[index].id
                     taskObj['marked'] = task[index].marked
                     taskItem.push(JSON.parse(JSON.stringify(taskObj)))
                 }
                 this.mytaskArr = taskItem
+            },
+            format(ts, fmt) {
+                if (!ts) return '';
+                if (!fmt) fmt = 'yyyy-MM-dd hh:mm:ss'
+                var dt = new Date(ts)
+                var o = {
+                    'M+': dt.getMonth() + 1, // 月份
+                    'd+': dt.getDate(), // 日
+                    'h+': dt.getHours(), // 小时
+                    'm+': dt.getMinutes(), // 分
+                    's+': dt.getSeconds(), // 秒
+                    'q+': Math.floor((dt.getMonth() + 3) / 3), // 季度
+                    'S': dt.getMilliseconds() // 毫秒
+                }
+                if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (dt.getFullYear() + '').substr(4 - RegExp.$1.length))
+                for (var k in o) {
+                    if (new RegExp('(' + k + ')').test(fmt)) {
+                        fmt = fmt.replace(RegExp.$1,
+                            (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
+                    }
+                }
+                return fmt
+            },
+            formatStartEndTime(data) {
+                var tYear = new Date().getFullYear();
+                var sDate,
+                    eDate,
+                    sf,
+                    ef;
+                if (data.startTime) {
+                    sDate = new Date(data.startTime);
+                    sf = data.isAllDay ? (sDate.getFullYear() == tYear ? 'MM-dd' : 'yyyy-MM-dd') : (sDate.getFullYear() == tYear ? 'MM-dd hh:mm' : 'yyyy-MM-dd hh:mm');
+                    sDate = this.format(sDate, sf);
+                }
+                if (data.endTime) {
+                    eDate = new Date(data.endTime);
+                    ef = data.isAllDay ? (eDate.getFullYear() == tYear ? 'MM-dd' : 'yyyy-MM-dd') : (eDate.getFullYear() == tYear ? 'MM-dd hh:mm' : 'yyyy-MM-dd hh:mm');
+                    eDate = this.format(eDate, ef);
+                }
+                if (sDate && eDate) {
+                    data.showTime = sDate + '~' + eDate;
+                } else if (sDate && !eDate) {
+                    data.showTime = this.i18n.Date_Begin + sDate;
+                } else if (!sDate && eDate) {
+                    data.showTime = this.i18n.Date_End + eDate;
+                } else {
+                    data.showTime = '';
+                }
+                if (data.isAllDay) data.showTime += ' ' + this.i18n.Date_ALLDay;
+                return data.showTime ? data.showTime : ''
             },
             error() {
                 this.isShow = true
@@ -182,13 +239,13 @@
             broadcastWidgetHeight() {
                 let _params = this.$getPageParams();
                 setTimeout(() => {
-					dom.getComponentRect(this.$refs.wrap, (ret) => {
-						this.channel.postMessage({
-							widgetHeight: ret.size.height,
-							id: _params.id
-						});
-					});
-				}, 200)
+                    dom.getComponentRect(this.$refs.wrap, (ret) => {
+                        this.channel.postMessage({
+                            widgetHeight: ret.size.height,
+                            id: _params.id
+                        });
+                    });
+                }, 200)
             },
             getData() {
                 let searchTime = this.getNowFormatDate(2, null);
@@ -196,10 +253,11 @@
                 let startDate = new Date(start)
                 let end = searchTime + ' 23:59:59'
                 let endDate = new Date(end)
-                this.getTask(startDate.getTime(), endDate.getTime())
+                this.getTask(startDate.getTime() / 1000, endDate.getTime() / 1000)
             }
         },
         created() {
+            this.$fixViewport();
             linkapi.getLanguage((res) => {
                 this.i18n = this.$window[res]
             })
@@ -217,9 +275,6 @@
 
 <style lang="css" src="../css/common.css"></style>
 <style>
-    .main {
-		flex: 1;
-    }
     .my-task {
         background-color: #fff;
     }
@@ -243,17 +298,8 @@
         margin-right: 19px;
     }
 
-    .task-width {
-        width: 550px;
-    }
-
     .task-time-width {
-        width: 137px;
-    }
-
-    .task-text {
-        width: 702px;
-        /* border-bottom: 1px solid rgba(232, 232, 232, 1); */
+        width: 220px;
     }
 
     .task-level-one {
@@ -278,7 +324,6 @@
 
     .no-content {
         height: 166px;
-        width: 750px;
     }
 
     .center-height {
