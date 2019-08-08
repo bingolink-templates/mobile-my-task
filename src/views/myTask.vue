@@ -15,7 +15,7 @@
                         <div class="flex1"
                             :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
                             <div class="flex-dr flex-ac flex-sb ptb27">
-                                <text class="f28 c0 fw4 lines1 flex1">{{item.name}}</text>
+                                <text class="f28 c0 fw4 lines1 lh40 flex1">{{item.name}}</text>
                                 <text class="f24 c153 fw4 pl20">{{item.showtime}}</text>
                                 <!-- <div class="task-time-width flex flex-dr">
                                     <text class="f24 c153 fw4">{{item.time}}</text>
