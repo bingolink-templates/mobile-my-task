@@ -18,7 +18,7 @@ module.exports = {
         "ErrorLoadData": "加載失敗"
     },
     "en": {
-        "MyMission": "My mission",
+        "MyMission": "My Task",
         "All": "More",
         "Date_ALLDay":"All day",
         "Date_Begin":"start with",
