@@ -286,7 +286,7 @@ export default {
 }
 
 .my-task-content {
-    padding: 0 18wx 10wx 0;
+    padding-right: 18wx;
 }
 
 .task-item {
