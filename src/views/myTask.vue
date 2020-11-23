@@ -3,8 +3,8 @@
         <!-- 我的任务 -->
         <div class="my-task">
             <div class="my-task-title flex">
-                <text class="f28 fw5 c0">{{i18n.MyMission}}</text>
-                <text class="f24 c153 fw4 pl20 pt10 pb10" @click="mytaskMoreEvent">{{i18n.All}}</text>
+                <text class="f30 fw5 c06">{{i18n.MyMission}}</text>
+                <text class="f24 c153 fw4" @click="mytaskMoreEvent">{{i18n.All}}</text>
             </div>
             <div class="my-task-content" v-if="isShow">
                 <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
@@ -13,7 +13,7 @@
                         <div v-if='item.marked == false' class="task-line task-level-three"></div>
                         <div class="flex1" :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
                             <div class="flex-dr flex-ac flex-sb task-item">
-                                <text class="f28 c0 fw4 lines1 lh40 flex1">{{item.name}}</text>
+                                <text class="f32 c0 fw4 lines1 lh40 flex1">{{item.name}}</text>
                                 <text class="f24 c153 fw4 pl20">{{item.showtime}}</text>
                                 <!-- <div class="task-time-width flex flex-dr">
                                     <text class="f24 c153 fw4">{{item.time}}</text>
@@ -24,10 +24,7 @@
                     </div>
                 </div>
                 <div class="no-content flex1  flex-ac flex-jc" v-if='mytaskArr.length==0'>
-                    <div class="flex-dr flex-jc">
-                        <bui-image src="/image/sleep.png" width="21wx" height="20wx"></bui-image>
-                        <text class="f26 c51 fw4 pl15 center-height">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
-                    </div>
+                    <text class="f32 c153 fw4 center-height">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
                 </div>
             </div>
         </div>
@@ -56,6 +53,20 @@ export default {
             channel: new BroadcastChannel('WidgetsMessage'),
             i18n: ''
         }
+    },
+    created() {
+        this.$fixViewport();
+        linkapi.getLanguage((res) => {
+            this.i18n = this.$window[res]
+        })
+    },
+    mounted() {
+        this.channel.onmessage = (event) => {
+            if (event.data.action === 'RefreshData') {
+                this.getData()
+            }
+        }
+        this.getData()
     },
     methods: {
         mytaskMoreEvent() {
@@ -94,8 +105,7 @@ export default {
         },
         getTask(startTime, endTime) {
             link.getServerConfigs([], (params) => {
-                let whereFilter = '(UNIX_TIMESTAMP(startTime) <= ' + endTime +
-                    ' OR startTime IS NULL) AND (UNIX_TIMESTAMP(endTime)>= ' + startTime + ' OR endTime IS NULL)'
+                let whereFilter = '(UNIX_TIMESTAMP(startTime) <= ' + endTime + ' OR startTime IS NULL) AND (UNIX_TIMESTAMP(endTime)>= ' + startTime + ' OR endTime IS NULL)'
                 let objData = {
                     whereFilter,
                     entityName: 'ExtendWorktask',
@@ -116,7 +126,6 @@ export default {
                 let index = 0;
                 let promiseOne;
                 let promiseTwo;
-
                 // 内部数据
                 linkapi.get({
                     url: params.specialUri + '/webCommon/getList',
@@ -126,7 +135,7 @@ export default {
                         index++
                         promiseOne = res
                         if (index == 2) {
-                            this.getTaskData(promiseOne, promiseTwo)
+                            this.getTaskData(promiseTwo, promiseOne)
                         }
                     }
                 }, () => {
@@ -141,7 +150,7 @@ export default {
                         index++
                         promiseTwo = res
                         if (index == 2) {
-                            this.getTaskData(promiseOne, promiseTwo)
+                            this.getTaskData(promiseTwo, promiseOne)
                         }
                     }
                 }, () => {
@@ -155,18 +164,18 @@ export default {
             this.isError = true
             this.isShow = true
             this.broadcastWidgetHeight()
-            let task = []
+            let task = [],
+                taskObj = {},
+                taskItem = []
             if (JSON.stringify(promiseOne.data) != '[]') {
                 task = promiseOne.data
             }
             if (JSON.stringify(promiseTwo.data) != '[]') {
                 task = task.concat(promiseTwo.data)
             }
-            let taskObj = {}
-            let taskItem = []
-            for (let index = 0; index < task.length; index++) {
-                let newDate = new Date(Date.parse(task[index].createdTimeDisplayValue.replace(/\-/g,
-                    "/")));
+            let maxNumber = task.length >= 5 ? 5 : task.length;
+            for (let index = 0; index < maxNumber; index++) {
+                let newDate = new Date(Date.parse(task[index].createdTimeDisplayValue.replace(/\-/g, "/")));
                 // let getMonthWeek = this.getNowFormatDate(1, newDate)
                 let getDay = newDate.getDay()
                 // taskObj['time'] = getMonthWeek
@@ -260,20 +269,6 @@ export default {
             let endDate = new Date(end)
             this.getTask(startDate.getTime() / 1000, endDate.getTime() / 1000)
         }
-    },
-    created() {
-        this.$fixViewport();
-        linkapi.getLanguage((res) => {
-            this.i18n = this.$window[res]
-        })
-    },
-    mounted() {
-        this.channel.onmessage = (event) => {
-            if (event.data.action === 'RefreshData') {
-                this.getData()
-            }
-        }
-        this.getData()
     }
 }
 </script>
@@ -285,12 +280,13 @@ export default {
 }
 
 .my-task-title {
-    height: 20wx;
-    margin: 9wx 11wx 10wx 12wx;
+    height: 47wx;
+    line-height: 47wx;
+    padding: 0 18wx;
 }
 
 .my-task-content {
-    padding: 0 12wx 10wx 0;
+    padding: 0 18wx 10wx 0;
 }
 
 .task-item {
@@ -300,7 +296,7 @@ export default {
 .task-line {
     width: 5px;
     height: 46wx;
-    margin-right: 19px;
+    margin-right: 14wx;
 }
 
 .task-time-width {
