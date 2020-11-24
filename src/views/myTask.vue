@@ -7,23 +7,26 @@
                 <bui-image src="/image/more.png" width="18wx" height="18wx" @click="mytaskMoreEvent"></bui-image>
             </div>
             <div class="my-task-content" v-if="isShow">
-                <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
-                    <div class="flex-dr task-item flex-ac">
-                        <div v-if='item.marked == true' class="task-line task-level-one"></div>
-                        <div v-if='item.marked == false' class="task-line task-level-three"></div>
-                        <div class="flex1" :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
-                            <div class="flex-dr flex-ac flex-sb task-item">
-                                <text class="f32 c0 fw4 lines1 lh40 flex1">{{item.name}}</text>
-                                <text class="f24 c153 fw4 pl20">{{item.showtime}}</text>
-                                <!-- <div class="task-time-width flex flex-dr">
+                <div v-if='mytaskArr.length!=0'>
+                    <div v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
+                        <div class="flex-dr task-item flex-ac">
+                            <div v-if='item.marked == true' class="task-line task-level-one"></div>
+                            <div v-if='item.marked == false' class="task-line task-level-three"></div>
+                            <div class="flex1" :class="[index == (mytaskArr.length-1)? 'border-no-bottom' : 'border-bottom']">
+                                <div class="flex-dr flex-ac flex-sb task-item">
+                                    <text class="f32 c0 fw4 lines1 lh40 flex1">{{item.name}}</text>
+                                    <text class="f24 c153 fw4 pl20">{{item.showtime}}</text>
+                                    <!-- <div class="task-time-width flex flex-dr">
                                     <text class="f24 c153 fw4">{{item.time}}</text>
                                     <text class="f24 c153 fw4">{{item.week}}</text>
                                 </div> -->
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="no-content flex1  flex-ac flex-jc" v-if='mytaskArr.length==0'>
+                <div class="no-content flex1  flex-ac flex-jc" v-else>
+                    <bui-image src="/image/nodata.png" width="109wx" height="70wx" style="margin-bottom: 16wx"></bui-image>
                     <text class="f32 c153 fw4 center-height">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
                 </div>
             </div>
@@ -324,7 +327,7 @@ export default {
 }
 
 .no-content {
-    height: 83wx;
+    height: 192wx;
 }
 
 .center-height {
