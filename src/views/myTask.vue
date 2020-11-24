@@ -4,7 +4,7 @@
         <div class="my-task">
             <div class="my-task-title flex">
                 <text class="f30 fw5 c06">{{i18n.MyMission}}</text>
-                <text class="f24 c153 fw4" @click="mytaskMoreEvent">{{i18n.All}}</text>
+                <bui-image src="/image/more.png" width="18wx" height="18wx" @click="mytaskMoreEvent"></bui-image>
             </div>
             <div class="my-task-content" v-if="isShow">
                 <div v-if='mytaskArr.length!=0' v-for="(item, index) in mytaskArr" :key='index' @click='mytaskUserEvent(item.id)'>
@@ -173,7 +173,7 @@ export default {
             if (JSON.stringify(promiseTwo.data) != '[]') {
                 task = task.concat(promiseTwo.data)
             }
-            let maxNumber = task.length >= 5 ? 5 : task.length;
+            let maxNumber = task.length >= 4 ? 4 : task.length;
             for (let index = 0; index < maxNumber; index++) {
                 let newDate = new Date(Date.parse(task[index].createdTimeDisplayValue.replace(/\-/g, "/")));
                 // let getMonthWeek = this.getNowFormatDate(1, newDate)
